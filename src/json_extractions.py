@@ -30,7 +30,3 @@ def extract_file_name_discord(discord_json_blob: str, extension="") -> str:
     message_count = str(discord_json_blob["messageCount"])
 
     return "_".join( (guild_blob["name"],channel_blob["category"],channel_blob["name"], message_count, exported_at ) ) + extension
-
-def extract_messages_embeds():
-
-    return

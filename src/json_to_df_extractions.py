@@ -73,20 +73,41 @@ def extract_mesages_top_level(discord_json_blob: str, extraction_level="messages
         rename_function=messages_top_level_rename
     )
 
-def df_drop_if_exists(df:pd.DataFrame, drop_list: list[str]) -> None:
+def df_drop_cols_if_exists(df:pd.DataFrame, drop_list: list[str]) -> None:
+    """
+    The pd.DataFrame.drop() method will raise an error if you attempt to drop a column that does not exist. This is an abstracted method to drop columns ONLY if they exist within the DataFrame, preventing that error
 
-    thisFilter = df.filter(drop_list)
-    df.drop(thisFilter, inplace=True, axis=1)
+    When working with .json blobs from API call returns (like Discord Data) there are *optional* columns depending on if they exist in the base data. That is why this method was created, as the columns in our normalized DataFrame may or may not exist
+
+    Args:
+        df (pd.DataFrame): The DataFrame you wish you drop columns from
+        drop_list (list[str]): The list of columns you wish to drop from the DataFrame
+    Returns:
+        Nothing, this action happens inplace on the DataFrame
+    """
+
+    dropFilter = df.filter(drop_list)
+    df.drop(dropFilter, inplace=True, axis=1)
 
     return
 
 def messages_top_level_column_drop(df:pd.DataFrame) -> None:
 
-    df_drop_if_exists(df=df,drop_list=messages_top_level_column_drop_list)
+    df_drop_cols_if_exists(df=df,drop_list=messages_top_level_column_drop_list)
 
     return
 
 def df_add_prefix_exclude(df: pd.DataFrame, prefix:str, exclude_columns: list[str]):
+    """
+    Add a prefix to all* columns in a DataFrame. e.g. "col_name" -> "new_col_name" with prefix 'new_'. * = Exclude a list of columns from getting a prefix
+
+    Args:
+        df (pd.DataFrame): DataFrame you wish to add prefixes to columns
+        prefix (str): The prefix you want to add to each column on the DataFrame
+        exclude_columns (list[str]): Any column you wish to NOT add the prefix to
+    Returns:
+        pd.DataFrame: The same DataFrame as before but now with prefixes on columns not excluded
+    """
 
     return df.rename(columns={c: prefix+c for c in df.columns if c not in exclude_columns})
 
@@ -115,7 +136,7 @@ def extract_messages_embeds(discord_json_blob: str, extraction_level="messages",
 
 def extract_messages_embeds_column_drop(df: pd.DataFrame) -> None:
 
-    df_drop_if_exists(df=df,drop_list=messages_embeds_column_drop_list)
+    df_drop_cols_if_exists(df=df,drop_list=messages_embeds_column_drop_list)
 
     return
 
@@ -139,6 +160,7 @@ def extract_messages_attachments(discord_json_blob: str, extraction_level="messa
             "sep": column_separator,
             "record_path": attachment_level,
             "meta": meta_info,
+            # Necessary argument for attachment information because it's unique key, ID, is the same as the higher level messages unique key, ID
             "record_prefix": f"{attachment_level}_"
         },
         drop_function=extract_messages_attachments_column_drop,
@@ -147,7 +169,7 @@ def extract_messages_attachments(discord_json_blob: str, extraction_level="messa
 
 def extract_messages_attachments_column_drop(df: pd.DataFrame):
 
-    df_drop_if_exists(df=df,drop_list=messages_attachments_column_drop_list)
+    df_drop_cols_if_exists(df=df,drop_list=messages_attachments_column_drop_list)
 
     return
 
@@ -158,7 +180,7 @@ def extract_messages_attachments_rename(df: pd.DataFrame):
 
     return df
 
-def extract_messages_pattern(json_normalize_dict: dict, drop_function: Callable, rename_function: Callable,):
+def extract_messages_pattern(json_normalize_dict: dict, drop_function: Callable, rename_function: Callable) -> pd.DataFrame:
     """
     We are following the same ETL pattern multiple times, abstracted here:
 
@@ -166,13 +188,18 @@ def extract_messages_pattern(json_normalize_dict: dict, drop_function: Callable,
     - Call a Drop Function
     - Call a Re-Name Function
 
-
+    Args:
+        json_normalize_dict (dict): A dictionary of arguments, all for the pd.json_normalize() method
+        drop_function (Callable): A method that drops columns from the DataFrame returned by the pd.json_normalize() method
+        rename_function (Callable): A method that re-names columns from the DataFrame returned by the pd.json_normalize() method
+    Returns:
+        pd.DataFrame: A DataFrame that has been normalized, had columns dropped from and columns re-named
     """
 
+    # Unpack dictionary to be used as a list of arguments w/ values to the method
     temp_df = pd.json_normalize(**json_normalize_dict)
 
     drop_function(temp_df)
-    if rename_function is not None:
-        temp_df = rename_function(df=temp_df)
+    temp_df = rename_function(df=temp_df)
 
     return temp_df
