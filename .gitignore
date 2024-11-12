@@ -1,4 +1,7 @@
 *.csv
+*.db
 *.json
 *.ipynb
+!youtube_api.ipynb
 logic_checking.md
+!sqlite_database_setup.ipynb

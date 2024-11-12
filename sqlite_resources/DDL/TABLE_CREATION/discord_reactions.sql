@@ -1,4 +1,4 @@
-CREATE TABLE discord_reactions (
+CREATE TABLE IF NOT EXISTS discord_reactions (
     reaction_id INTEGER PRIMARY KEY,
     emoji_id TEXT,
     emoji_name TEXT,
@@ -7,4 +7,4 @@ CREATE TABLE discord_reactions (
     message_id REFERENCES discord_messages(message_id)
 );
 
-CREATE INDEX [IFK_ReactionsMessageId] ON discord_reactions ([message_id]);
+CREATE INDEX IF NOT EXISTS [IFK_ReactionsMessageId] ON discord_reactions ([message_id]);
