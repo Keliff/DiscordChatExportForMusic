@@ -90,7 +90,7 @@ def process_final_export(df: pd.DataFrame):
 
 def main():
 
-    json_file = "keliff_music_export_2024-10-25.json"
+    json_file = "tunes.json"
 
     with open(json_file, 'r') as j:
         contents = json.loads(j.read())
